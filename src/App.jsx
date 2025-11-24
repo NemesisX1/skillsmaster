@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, X, Trophy, Users, User, Check, XCircle, Plus, History, Award, ArrowRight, Info, CheckSquare, Volume2, VolumeX, BookOpen, Quote } from 'lucide-react';
 
 // --- Configuration & Données ---
@@ -236,12 +236,22 @@ const Timer = ({ duration, onComplete, autoStart = false, isStopped = false }) =
   const [isActive, setIsActive] = useState(autoStart);
   
   useEffect(() => {
-    if (isStopped) { setIsActive(false); return; }
-    let interval = null;
-    if (isActive && timeLeft > 0) interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
-    else if (timeLeft === 0) { setIsActive(false); onComplete && onComplete(); }
+    if (isStopped || !isActive) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsActive(false);
+          if (onComplete) onComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, onComplete, isStopped]);
+  }, [isActive, isStopped, onComplete]);
 
   return (
     <div className="w-full mt-6 bg-black/20 p-3 rounded-xl backdrop-blur-sm transition-all">
@@ -316,7 +326,7 @@ const CardBack = ({ category, onClick, disabled }) => {
 };
 
 const CardFront = ({ card, category, onClose, onResult, playerName }) => {
-  const [selectedOption, setSelectedOption] = useState(null);
+
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
   const [timerStopped, setTimerStopped] = useState(false);
   const [feedbackState, setFeedbackState] = useState(null);
@@ -332,7 +342,7 @@ const CardFront = ({ card, category, onClose, onResult, playerName }) => {
 
   const handleQuizOptionClick = (index) => {
     if (isAnswerRevealed) return;
-    setSelectedOption(index);
+
     const isCorrect = index === card.correctIndex;
     handleResult(isCorrect);
   };
